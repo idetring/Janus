@@ -29,6 +29,7 @@ function getPlayersPosition () {
     for (let i = 0; i < playersPosition.length; i++) {
         playersPosition[i] = Players.get(i).position;
     }
+    return playersPosition;
 }
 let findPiece = function(player) {
     return player.position
@@ -174,7 +175,7 @@ function givePieceBorder() {
 
 
 function getAvailableMoves() {
-    getPlayersPosition();
+    playersPosition = getPlayersPosition();
     console.log(playersPosition)
     let adjacentcells = [];
     for (const [key, value] of Object.entries(directions)) {
@@ -198,7 +199,9 @@ function giveCellBorder() {
         let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
         // if point is not in playersPositions
 
-        if ( !(i*10+j in playersPosition) ) {
+        if ( !playersPosition.includes(i*10+j) ) {
+            console.log(i*10+j)
+            console.log(!((i*10+j) in playersPosition))
             selectedPiece.directions[selectedPiece.neighbors[k]] = true;
             document.getElementById(zeroPad(i*10+j)).style.filter = "brightness(75%)";
         }
@@ -218,7 +221,7 @@ function giveCellsClick() {
         let dir = directions[selectedPiece.neighbors[k]];
         let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
         let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
-        if (!(i*10+j in playersPosition)) {
+        if ( !playersPosition.includes(i*10+j) ) {
             document.getElementById(zeroPad(i*10+j)).setAttribute("onclick", `makeMove(${zeroPad(i*10+j)})`);
         }
     }

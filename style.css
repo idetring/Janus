@@ -33,11 +33,11 @@ div {
 }
 
 .Cell.green {
-    background-color: #006921;
+    background-color: #13b546;
 }
 
 .Cell.red {
-    background-color: #ff0000;
+    background-color: #fd3d3d;
 }
 
 .Cell.orange {
@@ -45,7 +45,7 @@ div {
 }
 
 .Cell.purple {
-    background-color: #800080;
+    background-color: #821f82;
 }
 
 .Cell.green.Janus {

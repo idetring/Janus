@@ -24,79 +24,120 @@ div {
     width: 100%;
 }
 
+.Board {
+    background-image: url('board.png');
+    background-size: 100%;
+}
+
 .Cell {
-    background-color: #ffffff;
+/*    background-color: #ffffff; */
 }
 
 .Cell.Empty {
-    background-color: #fec388;
+/*    background-color: #a5a5a5; */
 }
 
 .Cell.green {
     background-color: #13b546;
+    box-shadow: 3px 3px lightblue;
+}
+.Cell.green.Janus {
+    background-image: url('janus.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .Cell.red {
     background-color: #fd3d3d;
+    box-shadow: 3px 3px lightblue;
+}
+
+.Cell.red.Janus {
+    background-image: url('janus.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .Cell.orange {
     background-color: #FFA500;
+    box-shadow: 3px 3px rgb(176, 201, 210);
+}
+
+.Cell.orange.Janus {
+    background-image: url('janus.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .Cell.purple {
     background-color: #821f82;
+    box-shadow: 3px 3px lightblue;
+}
+.Cell.purple.Janus {
+    background-image: url('janus.png');
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
-.Cell.green.Janus {
+.GroupOverlay {
+    position:absolute;
+    width: 20px;
+    height: 20px;
+    padding: 12px;
+    top:0;
+    left:0;
+    background:rgb(135, 135, 135);
+    opacity:0.50;
+    width:100%;
+    height:100%;
+ }
 
-}
 
 .JanusGroup {
-    background-color: #ffffff;
     width: 140px;
     height: 140px;
 }
 
 td {
     text-align: center;
-    background-color: #BA7A3A;
     width: 65px;
     height: 65px;
 }
 
 .turn-text {
     text-align: center;
+    display: block;
+    display: inline-block;
     color: black;
     font-family: "open sans";
-    font-size: 55px;
+    font-size: 40px;
 }
 
-.black-piece {
+.player-text {
+    text-align: center;
+    display: block;
+    display: inline-block;
+    color: black;
+    font-family: "open sans";
+    font-size: 20px;
+}
+
+.Player{
     width: 20px;
     height: 20px;
     padding: 12px;
-    background-color: black;
     border: 1px solid white;
     border-radius: 50px;
 }
 
-.red-piece {
-    width: 20px;
-    height: 20px;
-    padding: 12px;
-    background-color: red;
-    border: 1px solid white;
-    border-radius: 50px;
-}
-
-king-red-piece {
-    background-color: rgb(0, 98, 18);
-}
-
-.king.black-piece {
-    background-color: purple;
-}
+.Player.black {background-color: black;}
+.Player.red{background-color: red;}
+.Player.green{background-color: rgb(14, 115, 1);}
+.Player.blue{background-color: blue;}
 
 p {
     display: inline-block;

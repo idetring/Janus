@@ -1,4 +1,4 @@
-/*----------- Game State  ----------*/
+/*----------- Constants and Classes  ----------*/
 
 const colors = ['green', 'red', 'orange', 'purple']
 
@@ -7,22 +7,119 @@ const Tile = class {
         this.html = html;
         this.color = color;
         this.moves = moves;
+        this.janus = false;
+        this.directions = [];
     }
 }
+
+const Janus = class {
+    constructor(position,html,color,moves) {
+        this.position = position;
+        this.html = html;
+        this.color = color;
+        this.moves = moves;
+        this.directions = [];
+    }
+}
+
+const TileGroup = class {
+    constructor(occupied, occupiedby, points) {
+        this.occupied = occupied;
+        this.occupiedby = occupiedby;
+        this.points = points;
+    }
+}
+
+const Player = class {
+    constructor(name, position, color) {
+        this.name = name;   
+        this.position = position;
+        this.score = 0;
+        this.pieces = 12;
+        this.color = color;
+        this.turn = false;
+        this.janus = [];
+    }
+}
+
+// directions
+let directions = {'northwest': [-1,-1], 
+                    'north': [-1,0], 
+                    'northeast': [-1,1], 
+                    'west': [0,-1], 
+                    'east': [0,1], 
+                    'southwest': [1,-1], 
+                    'south': [1,0], 
+                    'southeast': [1,1]};
+
+const rotations = {0:0,1:90,2:180,3:270}
+
+let directions_rotation = {'northwest': {0:'northwest',90:'northeast',180:'southeast',270:'southwest'},
+                            'north': {0:'north',90:'east',180:'south',270:'west'},
+                            'northeast': {0:'northeast',90:'southeast',180:'southwest',270:'northwest'},
+                            'west': {0:'west',90:'north',180:'east',270:'south'},
+                            'east': {0:'east',90:'south',180:'west',270:'north'},
+                            'southwest': {0:'southwest',90:'southwest',180:'northeast',270:'northwest'},
+                            'south': {0:'south',90:'west',180:'north',270:'east'},
+                            'southeast': {0:'southeast',90:'southwest',180:'northwest',270:'northeast'}};
+
+
+dir_types = ['rose','cross','diagonal','horizontal','vertical']                            
+let directions_types = {
+    rose : ['northwest', 'north', 'northeast', 'west', 'east', 'southwest', 'south', 'southeast'],
+    cross : ['north', 'west', 'east', 'south'],
+    diagonal : ['northwest', 'northeast', 'southwest', 'southeast'],
+    horizontal : ['west', 'east'],
+    vertical : ['north', 'south'],
+};
+
+
+const stringWithPlaceholders = 'Player: {name} \n\ Janus: {janus} \n\ Score: {score} \n\ Coins: {pieces}';
+
+/* ---------- Principle Functions ----------*/
 
 function randomIntFromInterval(min, max) { // min and max included 
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
+function randomElementFromArray(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
 
+function randomElementFromObject(object) {
+    //return the keys of the map Map as an array
+    let keys = Array.from( Object.keys(object) );
+    return object[randomElementFromArray(keys)];
+}
 
-const NPlayers = 2;
+const zeroPad = (num) => String(num).padStart(2, '0')
+
+function rotate(directions,rotate) {
+    let out = []; 
+    for (let i = 0; i < directions.length; i++) {
+        out[i] = directions_rotation[directions[i]][rotate];
+    }
+    return out;
+}
+
+function random_rotate(directions) {
+    let rotate = randomElementFromMap(rotations);
+    // rotate each direction in rotation and return the new direction
+    return rotate(directions,rotate);
+}
+
+/*----------- Players and functions  ----------*/
+
 let Players = new Map();
-Players.set(0, {name: "Igor", position: 0, score: 0, pieces: 0, color: "red", turn: true});
-Players.set(1, {name: "not Igor", position: 9, score: 0, pieces: 0, color: "black", turn: false});
+Players.set(0, new Player("Igor",0,"red"));
+Players.set(1, new Player("not Igor",9,"black"));
+Players.set(2, new Player("totally not Igor",99,"green"));
+Players.set(3, new Player("soon Igor",90,"blue"));
+const NPlayers = Players.size;
 
-
-
+//set randomly one players turn to true
+//Players.get(randomIntFromInterval(0,Players.size-1)).turn = true;
+Players.get(0).turn = true;
 
 function getPlayersPosition () {
     playersPosition = new Array(Players.size);
@@ -50,15 +147,18 @@ let playerTurn = function() {
     }
 }
 
-for (let i = 0; i < Players.size; i++) {
-    tmp = Players.get(i);
-    tmp['piece'] = document.getElementsByClassName(`${Players.get(i).color}-piece`);
+let playerNr = function() {
+    for (let i = 0; i < Players.size; i++) {
+        if (Players.get(i).turn) {
+            return i
+        }
+    }
 }
-/*---------- Cached Variables ----------*/
 
-const zeroPad = (num) => String(num).padStart(2, '0')
+/*---------- Prepare Game Variables ----------*/
 
-// DOM referenes
+
+// Get Cells from HTML and store in Map
 const unorderedcells = document.getElementsByClassName("Cell");
 var cells = new Map();
 for (let i = 0; i < unorderedcells.length; i++) {
@@ -70,16 +170,21 @@ for (let i = 0; i < cells.size; i++) {
     cells.get(zeroPad(i)).html.className = `Cell ${cells.get(zeroPad(i)).color}`;
 }
 
+// add a text to the html whos turn it is
 const TurnText = document.getElementsByClassName("turn-text");
 TurnText[0].style.color = `${playerTurn().color}`;
 TurnText[0].innerHTML = `It is ${playerTurn().name}'s turn`;
 
+const PlayerText = document.getElementsByClassName("player-text");
+
+// add players' pieces to the board
 for (let i = 0; i < NPlayers; i++) {
-    cells.get(zeroPad(Players.get(i).position)).html.innerHTML = `<p class="${Players.get(i).color}-piece"></p>`;
+    cells.get(zeroPad(Players.get(i).position)).html.innerHTML = `<p class="Player ${Players.get(i).color}"></p>`;
+    Players.get(i).piece = document.getElementsByClassName(`Player ${Players.get(i).color}`);
 }
 
 
-// selected piece properties
+// selected piece properties for each turn
 let selectedPiece = {
     player: null,
     playerID: -1,
@@ -98,15 +203,37 @@ let selectedPiece = {
     'southeast': false}
 }
 
-// directions
-let directions = {'northwest': [-1,-1], 
-                    'north': [-1,0], 
-                    'northeast': [-1,1], 
-                    'west': [0,-1], 
-                    'east': [0,1], 
-                    'southwest': [1,-1], 
-                    'south': [1,0], 
-                    'southeast': [1,1]};
+
+// add 8 Janus to the board - ideally this should be done randomly, 2 for each color
+let i = 0;
+while (i < 8) {
+    let k = randomIntFromInterval(0,99);
+    if (!(k in [1,9,90,99]) && cells.get(zeroPad(k)).janus == false) {
+        cells.get(zeroPad(k)).janus = true;
+        cells.get(zeroPad(k)).html.className = `Cell ${cells.get(zeroPad(k)).color} Janus`;
+        cells.get(zeroPad(k)).directions = directions_types[randomElementFromArray(['horizontal','vertical'])]
+        i++;
+    }
+}
+
+
+// add directions others cells
+for (let i = 0; i < cells.size; i++) {
+    if (cells.get(zeroPad(i)).janus == false) {
+        cells.get(zeroPad(i)).directions = randomElementFromObject(directions_types)
+/*        cells.get(zeroPad(i)).html.style = `background-image: url('rose.png');
+        background-size: 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        -webkit-transform:rotate(${rotation}deg);
+        -moz-transform: rotate(${rotation}deg);
+        -ms-transform: rotate(${rotation}deg);
+        -o-transform: rotate(${rotation}deg);
+        transform: rotate(${rotation}deg);`;
+*/
+    };
+
+}
 
 /*---------- Event Listeners ----------*/
 
@@ -118,7 +245,6 @@ function givePiecesEventListeners() {
 
 /*---------- Logic ----------*/
 
-// holds the length of the players piece count
 function getPlayerPieces() {
     playerPiece = playerTurn().piece[0];
     removeCellonclick();
@@ -132,7 +258,6 @@ function removeCellonclick() {
     }
 }
 
-// resets borders to default
 function resetBorders() {
     playerPiece.style.border = "1px solid white";
     resetSelectedPieceProperties();
@@ -157,8 +282,6 @@ function resetSelectedPieceProperties() {
         'southeast': false}
 }
 
-
-// gets ID and index of the board cell its on
 function getSelectedPiece() {
     //whos turn is it
     let player = playerTurn();
@@ -166,6 +289,9 @@ function getSelectedPiece() {
     selectedPiece.indexOfBoardPiece = findPiece(player);
     selectedPiece.indicesOfBoardMatrix = pieceIndices(player);
     selectedPiece.moves = cells.get(zeroPad(selectedPiece.indexOfBoardPiece)).moves;
+    for (const [key, value] of Object.entries(cells.get(zeroPad(selectedPiece.indexOfBoardPiece)).directions)) {
+        selectedPiece.directions[value] = true;
+    }
     getAvailableMoves();
 }
 
@@ -173,23 +299,34 @@ function givePieceBorder() {
     selectedPiece.player.piece[0].style.border = "3px solid green";
 }
 
-
 function getAvailableMoves() {
     playersPosition = getPlayersPosition();
-    console.log(playersPosition)
     let adjacentcells = [];
-    for (const [key, value] of Object.entries(directions)) {
-        let dir = directions[key];
-        let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
-        let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
-        if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
-            adjacentcells.push(key)
+    for (const [key, value] of Object.entries(selectedPiece.directions)) {
+    // for all directions in selectedPiece that are true
+        if (value == true) {
+            let dir = directions[key];
+            let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
+            let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
+            if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
+                if ( !(playersPosition.includes(i*10+j)) ) {
+                    adjacentcells.push(key)
+                }
+            }
         }
+    }
+    //check if adjacentcells is empty
+    if (adjacentcells.length == 0) {
+        console.log("no moves available")
+        removeCellBorder();
+        resetSelectedPieceProperties();
+        removeCellonclick();
+        removeEventListeners();
+        return; 
     }
     selectedPiece.neighbors = adjacentcells
     givePieceBorder();
     giveCellBorder();
-
 }
 
 function giveCellBorder() {
@@ -197,14 +334,10 @@ function giveCellBorder() {
         let dir = directions[selectedPiece.neighbors[k]];
         let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
         let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
-        // if point is not in playersPositions
-
-        if ( !playersPosition.includes(i*10+j) ) {
-            console.log(i*10+j)
-            console.log(!((i*10+j) in playersPosition))
-            selectedPiece.directions[selectedPiece.neighbors[k]] = true;
-            document.getElementById(zeroPad(i*10+j)).style.filter = "brightness(75%)";
-        }
+        selectedPiece.directions[selectedPiece.neighbors[k]] = true;
+        cellcolor = cells.get(zeroPad(i*10+j)).color;
+        //document.getElementById(zeroPad(i*10+j)).style = `background:radial-gradient(${cellcolor},white)`;
+        document.getElementById(zeroPad(i*10+j)).style = "box-sizing:border-box; border: 10px solid grey";
     }
     
     giveCellsClick();
@@ -221,19 +354,15 @@ function giveCellsClick() {
         let dir = directions[selectedPiece.neighbors[k]];
         let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
         let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
-        if ( !playersPosition.includes(i*10+j) ) {
-            document.getElementById(zeroPad(i*10+j)).setAttribute("onclick", `makeMove(${zeroPad(i*10+j)})`);
-        }
+        document.getElementById(zeroPad(i*10+j)).setAttribute("onclick", `makeMove(${zeroPad(i*10+j)})`);
     }
 }
     
-
-// makes the move that was clicked
 function makeMove(moveto) {
     selectedPiece.player.piece[0].remove();
     let movetopadded = zeroPad(moveto);
     cells.get(movetopadded).html.innerHTML = "";
-    cells.get(movetopadded).html.innerHTML = `<p class="${selectedPiece.player.color}-piece" id="${selectedPiece.pieceId}"></p>`;
+    cells.get(movetopadded).html.innerHTML = `<p class="Player ${selectedPiece.player.color}" id="${selectedPiece.pieceId}"></p>`;
     let indexOfPiece = selectedPiece.indexOfBoardPiece
     removeCellBorder();
     changeData(indexOfPiece, moveto);
@@ -242,8 +371,16 @@ function makeMove(moveto) {
 
 function changeData(indexOfBoardPiece, modifiedIndex) {
     cells.get(zeroPad(indexOfBoardPiece)).html.className = "Cell Empty"
+    //check if cell has janus
+    if (cells.get(zeroPad(indexOfBoardPiece)).janus) {
+        // add cell color to players janus
+        selectedPiece.player.janus.push(cells.get(zeroPad(indexOfBoardPiece)).color);
+    }
     selectedPiece.player.position = modifiedIndex;
     cells.get(zeroPad(indexOfBoardPiece)).moves = 1;
+    cells.get(zeroPad(indexOfBoardPiece)).janus = false;
+    cells.get(zeroPad(indexOfBoardPiece)).directions = directions_types['rose']
+    cells.get(zeroPad(indexOfBoardPiece)).color = "white";
     resetSelectedPieceProperties();
     removeCellonclick();
     removeEventListeners();
@@ -255,18 +392,25 @@ function removeEventListeners() {
     changePlayer();
 }
 
-// Switches players turn
-
+// change players turn if the player has not the janus of the cells color
 function changePlayer() {
-    for (let i = 0; i < Players.size; i++) {
-        if (Players.get(i).turn) {
-            Players.get(i).turn = false;
-            Players.get((i+1)%NPlayers).turn = true;
-            break;
-        }
+    tmp = playerNr();
+    /* check if the new position of the player has a color of the players janus */
+    if ( !playerTurn().janus.includes(cells.get(zeroPad(playerTurn().position)).color) ) {
+        Players.get(tmp).turn = false;
+        Players.get((tmp+1)%NPlayers).turn = true;
     }
+    
     TurnText[0].innerHTML = `It is ${playerTurn().name}'s turn`;
     TurnText[0].style.color = `${playerTurn().color}`;
+
+    for (let i = 0; i < NPlayers; i++) {
+        janustext = "";
+        for (let j = 0; j < Players.get(i).janus.length; j++) {
+            janustext += `<span style="color: ${Players.get(i).janus[j]};font-weight: bold">Janus</span> `;
+        }
+        PlayerText[i].innerHTML = "Player: " + Players.get(i).name + " " + janustext;
+    }
 
     givePiecesEventListeners();
 }

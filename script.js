@@ -1,6 +1,8 @@
 /*----------- Constants and Classes  ----------*/
 
-const colors = ['green', 'red', 'orange', 'purple']
+const colors = ['green', 'red', 'orange', 'purple'];
+const Player_color = ['red','black','blue' ,'green'];
+const Player_start = [0, 9, 99, 90];
 
 const Tile = class {
     constructor(html, color,  moves) {
@@ -36,7 +38,7 @@ const Player = class {
         this.name = name;   
         this.position = position;
         this.score = 0;
-        this.pieces = 12;
+        this.pieces = 15;
         this.color = color;
         this.turn = false;
         this.janus = [];
@@ -57,6 +59,66 @@ const Board = class {
         }
     }
 }
+
+const Game = class {
+    constructor(N=10,NPlayers=4) {
+        this.N = N;
+        this.Nplayers = NPlayers;
+        this.players = new Map();
+        this.scoreboard = new Board(N);
+        this.tiles = new Map();
+    }
+
+    addPlayer(name) {
+        let color = Player_color[this.players.size];
+        let position = Player_start[this.players.size];
+        let player = new Player(name, position, color);
+        this.players.set(this.players.size,player);
+    }
+
+    removePlayer(name) {}
+
+    turn() {
+        for (let i = 0; i < this.players.size; i++) {
+            if (this.players.get(i).turn) {
+                return this.players.get(i)
+            }
+        }
+    }
+
+    initTiles() {
+        const unorderedcells = document.getElementsByClassName("Cell");
+        for (let i = 0; i < unorderedcells.length; i++) {
+            let moves = randomIntFromInterval(1,5);
+            let cellcolor = colors[randomIntFromInterval(0,3)];
+            this.tiles.set(unorderedcells[i].id, new Tile(unorderedcells[i], cellcolor, moves));
+        };
+        for (let i = 0; i < this.tiles.size; i++) {
+            this.tiles.get(zeroPad(i)).html.className = `Cell ${this.tiles.get(zeroPad(i)).color}`;
+        }
+        let i = 0;
+        while (i < 8) {
+            let k = randomIntFromInterval(0,99);
+            if (!(k in [1,9,90,99]) && this.tiles.get(zeroPad(k)).janus == false) {
+                this.tiles.get(zeroPad(k)).janus = true;
+                this.tiles.get(zeroPad(k)).html.className = `Cell ${this.tiles.get(zeroPad(k)).color} Janus`;
+                this.tiles.get(zeroPad(k)).directions = directions_types[randomElementFromArray(['horizontal','vertical'])]
+                i++;
+            }
+        }
+
+        for (let i = 0; i < this.tiles.size; i++) {
+            if (this.tiles.get(zeroPad(i)).janus == false) {
+                this.tiles.get(zeroPad(i)).directions = directions_types[randomElementFromArray(['rose'])]
+            }
+        }
+
+    }
+
+    endGame() {}
+
+}
+
 
 // directions
 let directions = {'northwest': [-1,-1], 
@@ -139,18 +201,33 @@ function random_rotate(directions) {
 
 /*----------- Players and functions  ----------*/
 
-let ScoreBoard = new Board(10);
-console.log(ScoreBoard)
+function initGame() {
+    GameState = new Game()
+    let playernames = ['Igor','not Igor','totally not Igor','soon Igor']
+    for (let i = 0; i < playernames.length; i++) {
+        GameState.addPlayer(playernames[i])
+    }
+    console.log(GameState.players)
+    GameState.players.get(0).turn = true;
 
-let Players = new Map();
-Players.set(0, new Player("Igor",0,"red"));
-Players.set(1, new Player("not Igor",9,"black"));
-Players.set(2, new Player("totally not Igor",99,"green"));
-Players.set(3, new Player("soon Igor",90,"blue"));
-const NPlayers = Players.size;
+    GameState.initTiles()
+    //console.log(GameState.players.get(0).turn)
+    let whosturnisit = GameState.turn()
+    console.log(whosturnisit)
+    return GameState
+}
+
+GameState = initGame()
+Players = GameState.players
+NPlayers = Players.size
+ScoreBoard = GameState.scoreboard
+cells = GameState.tiles
+console.log(cells)
 
 //set randomly one players turn to true
 //Players.get(randomIntFromInterval(0,Players.size-1)).turn = true;
+console.log(cells)
+console.log(cells)
 Players.get(0).turn = true;
 
 function getPlayersPosition () {
@@ -189,19 +266,6 @@ let playerNr = function() {
 
 /*---------- Prepare Game Variables ----------*/
 
-
-// Get Cells from HTML and store in Map
-const unorderedcells = document.getElementsByClassName("Cell");
-var cells = new Map();
-for (let i = 0; i < unorderedcells.length; i++) {
-    let moves = randomIntFromInterval(1,5);
-    let cellcolor = colors[randomIntFromInterval(0,3)];
-    cells.set(unorderedcells[i].id, new Tile(unorderedcells[i], cellcolor, moves));
-};
-for (let i = 0; i < cells.size; i++) {
-    cells.get(zeroPad(i)).html.className = `Cell ${cells.get(zeroPad(i)).color}`;
-}
-
 // add a text to the html whos turn it is
 const TurnText = document.getElementsByClassName("turn-text");
 TurnText[0].style.color = `${playerTurn().color}`;
@@ -237,35 +301,9 @@ let selectedPiece = {
 
 
 // add 8 Janus to the board - ideally this should be done randomly, 2 for each color
-let i = 0;
-while (i < 8) {
-    let k = randomIntFromInterval(0,99);
-    if (!(k in [1,9,90,99]) && cells.get(zeroPad(k)).janus == false) {
-        cells.get(zeroPad(k)).janus = true;
-        cells.get(zeroPad(k)).html.className = `Cell ${cells.get(zeroPad(k)).color} Janus`;
-        cells.get(zeroPad(k)).directions = directions_types[randomElementFromArray(['horizontal','vertical'])]
-        i++;
-    }
-}
-
 
 // add directions others cells
-for (let i = 0; i < cells.size; i++) {
-    if (cells.get(zeroPad(i)).janus == false) {
-        cells.get(zeroPad(i)).directions = randomElementFromObject(directions_types)
-/*        cells.get(zeroPad(i)).html.style = `background-image: url('rose.png');
-        background-size: 100%;
-        background-repeat: no-repeat;
-        background-position: center;
-        -webkit-transform:rotate(${rotation}deg);
-        -moz-transform: rotate(${rotation}deg);
-        -ms-transform: rotate(${rotation}deg);
-        -o-transform: rotate(${rotation}deg);
-        transform: rotate(${rotation}deg);`;
-*/
-    };
 
-}
 
 /*---------- Event Listeners ----------*/
 
@@ -433,6 +471,7 @@ function removeTileFromBoard(indexOfBoardPiece) {
         if ( ScoreBoard.groups.get(k).occupiedby === null ) {
             ScoreBoard.groups.get(k).occupiedby = selectedPiece.player;
             selectedPiece.player.score += ScoreBoard.groups.get(k).points;
+            selectedPiece.player.pieces -= 1;
             return;
         }
         else if ( ScoreBoard.groups.get(k).occupiedby !== selectedPiece.player ) {
@@ -462,11 +501,13 @@ function changePlayer() {
     TurnText[0].style.color = `${playerTurn().color}`;
 
     for (let i = 0; i < NPlayers; i++) {
-        janustext = "";
+        janustext = "<table><tr>";
         for (let j = 0; j < Players.get(i).janus.length; j++) {
-            janustext += `<span style="color: ${Players.get(i).janus[j]};font-weight: bold">Janus</span> `;
+            janustext += `<td class="Cell `+ Players.get(i).janus[j] +` Janus"></td>`;
+            console.log(janustext)
         }
-        PlayerText[i].innerHTML = "Player: " + Players.get(i).name + " " + janustext + " Score: " + Players.get(i).score;
+        janustext += "</tr></table>";
+        PlayerText[i].innerHTML = "Player: " + Players.get(i).name + " " + janustext + " Chips: " + Players.get(i).pieces +" Score: " + Players.get(i).score;
     }
 
     givePiecesEventListeners();

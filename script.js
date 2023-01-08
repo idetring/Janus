@@ -11,6 +11,7 @@ const Tile = class {
         this.moves = moves;
         this.janus = false;
         this.directions = [];
+        this.position = [];
     }
 }
 
@@ -95,6 +96,8 @@ const Game = class {
         };
         for (let i = 0; i < this.tiles.size; i++) {
             this.tiles.get(zeroPad(i)).html.className = `Cell ${this.tiles.get(zeroPad(i)).color}`;
+            this.tiles.get(zeroPad(i)).position = [Math.floor(i/10),i%10];
+
         }
         let i = 0;
         while (i < 8) {
@@ -212,8 +215,6 @@ function initGame() {
 
     GameState.initTiles()
     //console.log(GameState.players.get(0).turn)
-    let whosturnisit = GameState.turn()
-    console.log(whosturnisit)
     return GameState
 }
 
@@ -226,8 +227,6 @@ console.log(cells)
 
 //set randomly one players turn to true
 //Players.get(randomIntFromInterval(0,Players.size-1)).turn = true;
-console.log(cells)
-console.log(cells)
 Players.get(0).turn = true;
 
 function getPlayersPosition () {
@@ -241,11 +240,16 @@ let findPiece = function(player) {
     return player.position
 };
 
-let pieceIndices = function(player) {
-    let row = Math.floor(player.position / 10);
-    let col = player.position % 10;
+let returnIndices = function(index) {
+    let row = Math.floor(index / 10);
+    let col = index % 10;
     return [row,col];
-}
+};
+
+let pieceIndices = function(player) {
+    return returnIndices(player.position)
+};
+
 
 // find which player's turn it is from Players map
 let playerTurn = function() {
@@ -395,8 +399,44 @@ function getAvailableMoves() {
         return; 
     }
     selectedPiece.neighbors = adjacentcells
+    adjacent2ndOrder = getAvailableMoves2ndOrder();
     givePieceBorder();
     giveCellBorder();
+}
+
+function getAvailableMoves2ndOrder() {
+    let playersPosition = getPlayersPosition();
+    let adjacentcells = [];
+    for (const [key, value] of Object.entries(selectedPiece.directions)) {
+    // for all directions in selectedPiece that are true
+        if (value == true) {
+            let dir = directions[key];
+            let i = selectedPiece.indicesOfBoardMatrix[0] + dir[0]*selectedPiece.moves;
+            let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
+            if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
+                if ( !(playersPosition.includes(i*10+j)) ) {
+                    adjacentcells.push(zeroPad(i*10+j))
+                }
+            }
+        }
+    }
+    console.log(adjacentcells);
+    let adjacent2ndOrder = [];
+    for (let i = 0; i < adjacentcells.length; i++) {
+        let cell = cells.get(adjacentcells[i]);
+        for (const [key, value] of Object.entries(cell.directions)) {
+            let dir = directions[value];
+            let i = cell.position[0] + dir[0]*cell.moves;
+            let j = cell.position[1] + dir[1]*cell.moves;
+            if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
+                if ( !(playersPosition.includes(i*10+j)) ) {
+                    adjacent2ndOrder.push(zeroPad(i*10+j))
+                }
+            }
+        }
+    }
+    console.log(adjacent2ndOrder)
+    giveCellBorder2ndOrder(adjacent2ndOrder)
 }
 
 function giveCellBorder() {
@@ -412,6 +452,16 @@ function giveCellBorder() {
     
     giveCellsClick();
 }
+
+function giveCellBorder2ndOrder(adjacent2ndOrder) {
+    for (let k = 0; k < adjacent2ndOrder.length; k++) {
+        //document.getElementById(zeroPad(i*10+j)).style = `background:radial-gradient(${cellcolor},white)`;
+        document.getElementById(zeroPad(adjacent2ndOrder[k])).style = "box-sizing:border-box; border: 5px dashed grey";
+    }
+    
+}
+
+
 
 function removeCellBorder() {
     for (let i = 0; i < cells.size; i++) {

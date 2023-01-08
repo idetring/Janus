@@ -23,10 +23,11 @@ const Janus = class {
 }
 
 const TileGroup = class {
-    constructor(occupied, occupiedby, points) {
-        this.occupied = occupied;
-        this.occupiedby = occupiedby;
-        this.points = points;
+    constructor(tiles, points) {
+        this.tiles = tiles; // list of tiles
+        this.occupied = null; // Player
+        this.occupiedby = null; // Player
+        this.points = points; // int
     }
 }
 
@@ -39,6 +40,21 @@ const Player = class {
         this.color = color;
         this.turn = false;
         this.janus = [];
+    }
+}
+
+const Board = class {
+    constructor(N) {
+        this.N = N;
+        this.groups = new Map();
+        for (let i = 0; i < N*N; i++) {
+            let k = Math.floor(i/N/2)%(N/2)*10 + Math.floor(i/2)%(N/2);
+            this.groups.set(k,new TileGroup([],1));
+        }  
+        for (let i = 0; i < N*N; i++) {
+            let k = Math.floor(i/N/2)%(N/2)*10 + Math.floor(i/2)%(N/2);
+            this.groups.get(k).tiles.push(i.toString()); 
+        }
     }
 }
 
@@ -64,7 +80,7 @@ let directions_rotation = {'northwest': {0:'northwest',90:'northeast',180:'south
                             'southeast': {0:'southeast',90:'southwest',180:'northwest',270:'northeast'}};
 
 
-dir_types = ['rose','cross','diagonal','horizontal','vertical']                            
+dir_types = ['rose','cross'] //,'diagonal','horizontal','vertical']                            
 let directions_types = {
     rose : ['northwest', 'north', 'northeast', 'west', 'east', 'southwest', 'south', 'southeast'],
     cross : ['north', 'west', 'east', 'south'],
@@ -92,7 +108,20 @@ function randomElementFromObject(object) {
     return object[randomElementFromArray(keys)];
 }
 
+function randomGaussianNumber(mean=0, stdev=1) {
+    let u = 1 - Math.random(); //Converting [0,1) to (0,1)
+    let v = Math.random();
+    let z = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+    return z * stdev + mean;
+}
+
 const zeroPad = (num) => String(num).padStart(2, '0')
+
+function IndexToGroup(index) {
+    let N = ScoreBoard.N;
+    let k = Math.floor(index/N/2)%(N/2)*10 + Math.floor(index/2)%(N/2);
+    return k;
+}
 
 function rotate(directions,rotate) {
     let out = []; 
@@ -109,6 +138,9 @@ function random_rotate(directions) {
 }
 
 /*----------- Players and functions  ----------*/
+
+let ScoreBoard = new Board(10);
+console.log(ScoreBoard)
 
 let Players = new Map();
 Players.set(0, new Player("Igor",0,"red"));
@@ -376,6 +408,9 @@ function changeData(indexOfBoardPiece, modifiedIndex) {
         // add cell color to players janus
         selectedPiece.player.janus.push(cells.get(zeroPad(indexOfBoardPiece)).color);
     }
+    // remove tile from board 
+    removeTileFromBoard(indexOfBoardPiece);
+
     selectedPiece.player.position = modifiedIndex;
     cells.get(zeroPad(indexOfBoardPiece)).moves = 1;
     cells.get(zeroPad(indexOfBoardPiece)).janus = false;
@@ -384,6 +419,28 @@ function changeData(indexOfBoardPiece, modifiedIndex) {
     resetSelectedPieceProperties();
     removeCellonclick();
     removeEventListeners();
+}
+
+function removeTileFromBoard(indexOfBoardPiece) {
+    // remove tile from board
+    let k = IndexToGroup(indexOfBoardPiece)
+    console.log(k)
+    let index = ScoreBoard.groups.get(k).tiles.indexOf(indexOfBoardPiece.toString())
+    if ( index > -1 ) {
+        ScoreBoard.groups.get(k).tiles.splice(index, 1);
+    }
+    if (ScoreBoard.groups.get(k).tiles.length == 0) {
+        if ( ScoreBoard.groups.get(k).occupiedby === null ) {
+            ScoreBoard.groups.get(k).occupiedby = selectedPiece.player;
+            selectedPiece.player.score += ScoreBoard.groups.get(k).points;
+            return;
+        }
+        else if ( ScoreBoard.groups.get(k).occupiedby !== selectedPiece.player ) {
+            ScoreBoard.groups.get(k).occupiedby.score += 1;
+            selectedPiece.player.pieces -= 1 ;
+            return;
+        }
+    }
 }
 
 function removeEventListeners() {
@@ -409,7 +466,7 @@ function changePlayer() {
         for (let j = 0; j < Players.get(i).janus.length; j++) {
             janustext += `<span style="color: ${Players.get(i).janus[j]};font-weight: bold">Janus</span> `;
         }
-        PlayerText[i].innerHTML = "Player: " + Players.get(i).name + " " + janustext;
+        PlayerText[i].innerHTML = "Player: " + Players.get(i).name + " " + janustext + " Score: " + Players.get(i).score;
     }
 
     givePiecesEventListeners();

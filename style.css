@@ -25,16 +25,17 @@ div {
 }
 
 .Board {
-    background-image: url('board.png');
+/*    background-image: url('board.png');
     background-size: 100%;
+*/
 }
 
 .Cell {
-/*    background-color: #ffffff; */
+    background-color: #ffffff; 
 }
 
 .Cell.Empty {
-/*    background-color: #a5a5a5; */
+    background-color: #a5a5a5; 
 }
 
 .Cell.green {

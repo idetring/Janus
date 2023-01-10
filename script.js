@@ -106,6 +106,7 @@ const Game = class {
                 this.tiles.get(zeroPad(k)).janus = true;
                 this.tiles.get(zeroPad(k)).html.className = `Cell ${this.tiles.get(zeroPad(k)).color} Janus`;
                 this.tiles.get(zeroPad(k)).directions = directions_types[randomElementFromArray(['horizontal','vertical'])]
+                this.tiles.get(zeroPad(k)).moves = randomElementFromArray([1,5])
                 i++;
             }
         }
@@ -304,11 +305,6 @@ let selectedPiece = {
 }
 
 
-// add 8 Janus to the board - ideally this should be done randomly, 2 for each color
-
-// add directions others cells
-
-
 /*---------- Event Listeners ----------*/
 
 // initialize event listeners on pieces
@@ -406,7 +402,7 @@ function getAvailableMoves() {
 
 function getAvailableMoves2ndOrder() {
     let playersPosition = getPlayersPosition();
-    let adjacentcells = [];
+    let adjacent2ndOrder = new Map();
     for (const [key, value] of Object.entries(selectedPiece.directions)) {
     // for all directions in selectedPiece that are true
         if (value == true) {
@@ -415,23 +411,20 @@ function getAvailableMoves2ndOrder() {
             let j = selectedPiece.indicesOfBoardMatrix[1] + dir[1]*selectedPiece.moves;
             if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
                 if ( !(playersPosition.includes(i*10+j)) ) {
-                    adjacentcells.push(zeroPad(i*10+j))
+                    adjacent2ndOrder.set(zeroPad(i*10+j),[])
                 }
             }
         }
     }
-    console.log(adjacentcells);
-    let adjacent2ndOrder = [];
-    for (let i = 0; i < adjacentcells.length; i++) {
-        let cell = cells.get(adjacentcells[i]);
+    console.log(adjacent2ndOrder);
+    for (const [adcell,advalue] of adjacent2ndOrder.entries()) {
+        let cell = cells.get(adcell);
         for (const [key, value] of Object.entries(cell.directions)) {
             let dir = directions[value];
             let i = cell.position[0] + dir[0]*cell.moves;
             let j = cell.position[1] + dir[1]*cell.moves;
             if (i >= 0 && i <= 9 && j >= 0 && j <= 9) {
-                if ( !(playersPosition.includes(i*10+j)) ) {
-                    adjacent2ndOrder.push(zeroPad(i*10+j))
-                }
+                advalue.push(zeroPad(i*10+j))
             }
         }
     }
@@ -454,19 +447,33 @@ function giveCellBorder() {
 }
 
 function giveCellBorder2ndOrder(adjacent2ndOrder) {
-    for (let k = 0; k < adjacent2ndOrder.length; k++) {
-        //document.getElementById(zeroPad(i*10+j)).style = `background:radial-gradient(${cellcolor},white)`;
-        document.getElementById(zeroPad(adjacent2ndOrder[k])).style = "box-sizing:border-box; border: 5px dashed grey";
+    for (const [key,value] of adjacent2ndOrder.entries()) {
+        let tmpstyle = [];
+        document.getElementById(key).onmousemove = function(evt) {
+            for (let i = 0; i < value.length; i++) {
+                tmpstyle.push(JSON.parse(JSON.stringify(document.getElementById(value[i]).style)));
+                document.getElementById(value[i]).style = "box-sizing:border-box; border: 5px dashed grey";
+            }
+        }
+        document.getElementById(key).onmouseout = function() {
+            for (let i = 0; i < value.length; i++) {
+                document.getElementById(value[i]).style = tmpstyle[i];
+            }
+        }
     }
-    
 }
-
-
 
 function removeCellBorder() {
     for (let i = 0; i < cells.size; i++) {
         cells.get(zeroPad(i)).html.removeAttribute("style");
     }
+}
+
+function removeCellBoarder2ndOrder() {
+    for (let i = 0; i < cells.size; i++) {
+        document.getElementById(value[i]).removeAttribute("onmousemove");
+        document.getElementById(value[i]).removeAttribute("onmouseout");
+    }   
 }
 
 function giveCellsClick() {
@@ -485,6 +492,7 @@ function makeMove(moveto) {
     cells.get(movetopadded).html.innerHTML = `<p class="Player ${selectedPiece.player.color}" id="${selectedPiece.pieceId}"></p>`;
     let indexOfPiece = selectedPiece.indexOfBoardPiece
     removeCellBorder();
+    //removeCellBoarder2ndOrder();
     changeData(indexOfPiece, moveto);
 
 }
@@ -522,11 +530,13 @@ function removeTileFromBoard(indexOfBoardPiece) {
             ScoreBoard.groups.get(k).occupiedby = selectedPiece.player;
             selectedPiece.player.score += ScoreBoard.groups.get(k).points;
             selectedPiece.player.pieces -= 1;
+            checkWinner();
             return;
         }
         else if ( ScoreBoard.groups.get(k).occupiedby !== selectedPiece.player ) {
             ScoreBoard.groups.get(k).occupiedby.score += 1;
             selectedPiece.player.pieces -= 1 ;
+            checkWinner();
             return;
         }
     }
@@ -561,6 +571,32 @@ function changePlayer() {
     }
 
     givePiecesEventListeners();
+}
+
+function getWinner() {
+    let maxPlayer = 0;
+    let maxValue = 0;
+    for (const [key, value] of Object.entries(Players)) {
+        if ( value.score >= maxValue) {
+            maxPlayer = Players.get(key);
+            maxValue = value.score;
+        }
+      }
+      return maxPlayer;
+}
+
+function checkWinner() {
+    let winner = null;
+    for (let i = 0; i < NPlayers; i++) {
+        if (Players.get(i).pieces == 0) {
+            winner = getWinner()
+        }
+    }
+    if (winner !== null) {
+        console.log(winner)
+        alert(`${winner.name} has won the game`);
+        location.reload();
+    }
 }
 
 givePiecesEventListeners();

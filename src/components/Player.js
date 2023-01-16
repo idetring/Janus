@@ -35,13 +35,13 @@ export class PlayerText extends Component {
 
     render() {
         let PlayerJanus = this.props.player.janus.map((janus,idx) => { return  (
-            <td><BabyJanus key={idx} color={janus} /></td>)});
+            <td><BabyJanus color={janus} /></td>)});
     return (
         <div className="PlayerText" style={{fontSize:30,backgroundColor:this.props.player.turn ? this.props.player.color : "grey"}}>
             {this.props.player.name}<br />
-            <table>
+            <table><tbody><tr>
             {PlayerJanus} 
-            </table>
+            </tr></tbody></table>
             Chips left: {this.props.player.pieces} <br />
             Score: <span > {this.props.player.score} </span> <br />
         </div>

@@ -23,7 +23,14 @@ export class groupTile {
         this.tile = tile;
         this.color = null;
         this.points = points;
-        this.occupied = false;
+        let visited = new Array(2)
+        for (let k = 0; k < 2; k++) {
+            visited[k] = new Array(2);
+            for (let l = 0; l < 2; l++) {
+                visited[k][l] = false;
+            }
+        }
+        this.visited = visited; 
         this.occupiedby = null;
     }
 }
@@ -45,7 +52,7 @@ export class Tile extends Component{
             style={{
             backgroundColor: this.props.tile.color !== 'grey' ? this.props.tile.color : null,
             boxSizing: 'border-box',
-            border: this.props.availableMove !== null ? "10px solid white" : ".5px solid black"
+            border: this.props.availableMove !== null ? "5px solid white" : ".5px solid black"
             }}>{this.props.tile.color !== "grey" ? this.props.tile.moves : null}{this.props.content}
         </td>
         )

@@ -68,23 +68,52 @@ class Board extends Component {
         return -1;   // Not found
     }
 
+    returnScoreCoordinates(x,y) {
+        const scorex = Math.floor(x/2);
+        const scorey = Math.floor(y/2);
+        const tilex = scorex === 0 ? x : x % scorex;
+        const tiley = scorey === 0 ? y : y % scorey;
+        return [scorex,scorey,tilex,tiley];
+    }
+
     onPlayerClick = (player) => {
         console.log(player.position)
     }
     onTileClick = (playerID,newPosition) => {
         let tmpplayer = this.state.player;
-        let oldposition = [tmpplayer[playerID].position[0],tmpplayer[playerID].position[1]];
+        // that is a very ugly way, but it works
+        const [oldx,oldy] = [tmpplayer[playerID].position[0],tmpplayer[playerID].position[1]];
+        let [scorex,scorey,tilex,tiley] = this.returnScoreCoordinates(oldx,oldy);
         let g = this.state.grid
-        // check if tile is a janus tile
-        let tmpcell = g[oldposition[0]][oldposition[1]]
+        let tmpcell = g[oldx][oldy]
+        // check if tile is a janus tile and if so, push janus color to player
         if (tmpcell.janus) {
             tmpplayer[playerID].janus.push(tmpcell.color)
         }
+        // clear group tile in scoreboard
+        this.state.scoreboard[scorex][scorey].visited[tilex][tiley] = true;
+        // check if all tiles in group tile are visited
+        let group = this.state.scoreboard[scorex][scorey]
+        console.log(group)
+        if (group.visited[0][0] && group.visited[0][1] && group.visited[1][0] && group.visited[1][1] && group.occupiedby === null) {
+            group.occupiedby = playerID;
+            tmpplayer[playerID].score += group.points;
+            tmpplayer[playerID].pieces -= 1;
+        }
+        
         // replace old tile with empty tile
-        g[oldposition[0]][oldposition[1]] = new singleTile(tmpplayer[playerID].position,'grey',1);
-        g[oldposition[0]][oldposition[1]].directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-        // move player
+        g[oldx][oldy] = new singleTile(tmpplayer[playerID].position,'grey',1);
+        g[oldx][oldy].directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+        // move player to newPosition
         tmpplayer[playerID].position = newPosition;
+
+        // check if player has entered a group tile occupied by another player
+        let [newscorex,newscorey,newtilex,newtiley] = this.returnScoreCoordinates(newPosition[0],newPosition[1]);
+        if (this.state.scoreboard[newscorex][newscorey].occupiedby !== null && this.state.scoreboard[newscorex][newscorey].occupiedby !== playerID) {
+            tmpplayer[this.state.scoreboard[newscorex][newscorey].occupiedby].score += 1;
+            tmpplayer[playerID].pieces -= 1;
+        }
+
         // check if player has another turn, if not move to the next player
         if (tmpplayer[playerID].janus.indexOf(g[newPosition[0]][newPosition[1]].color) === -1) {
             tmpplayer[playerID].turn = false;
@@ -118,33 +147,17 @@ class Board extends Component {
         const playerNeighbours = neighbours[playerTurn.position[0]][playerTurn.position[1]]
         console.log(playerNeighbours)
 
-        const aboard = g.map((row, i) => { return (
-            <tr key={"row_"+i}>
-                {row.map((tile, j) => { 
-                    const player_ = this.isItemInArray(playerPositions,[i,j]) > -1 ? this.state.player[this.isItemInArray(playerPositions,[i,j])] : null;
-                    const availableMove = this.isItemInArray(playerNeighbours,[i,j]) > -1 ? () => this.onTileClick(playerID,[i,j]) : null;
-                    return (
-                        <Tile key={"tile_"+i+"_"+j} 
-                            content={player_ !== null ? <Player player={player_}
-                            onClick={player_.turn ? () => this.onPlayerClick(player_) : null}/> : null} 
-                            availableMove={availableMove} tile={g[i][j]}>
-                        </Tile>
-                    )
-                })}
-            </tr>)
-        });
-
         const board = s.map((grow,gi) => {return (
-            <tr key={"grouprow_"+gi}>
+            <tr>
                 {grow.map((gtile,gj) => { return (
-                    <td><table><tbody>
+                    <td><table className="GroupTile"><tbody>
                     {gtile.tile.map((row,i) => { return (
                         <tr>
                             {row.map((tile,j) => {
                                 const player_ = this.isItemInArray(playerPositions,[tile[0],tile[1]]) > -1 ? this.state.player[this.isItemInArray(playerPositions,[tile[0],tile[1]])] : null;
                                 const availableMove = this.isItemInArray(playerNeighbours,[tile[0],tile[1]]) > -1 ? () => this.onTileClick(playerID,[tile[0],tile[1]]) : null;
                                 return (
-                                    <Tile key={"tile_"+tile[0]+"_"+tile[1]} 
+                                    <Tile
                                         content={player_ !== null ? <Player player={player_}
                                         onClick={player_.turn ? () => this.onPlayerClick(player_) : null}/> : null} 
                                         availableMove={availableMove} tile={g[tile[0]][tile[1]]}>
@@ -160,7 +173,7 @@ class Board extends Component {
         });
 
         const playerturn = this.state.player.map(a => {return (
-            <td key={"player_"+a.name}>
+            <td>
                                 <PlayerText player={a}/>
             </td>
         )

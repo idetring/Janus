@@ -1,0 +1,23 @@
+.Player{
+    align-content : center;
+    vertical-align : center;
+    border: 1px solid white;
+    border-radius: 45px;
+    width: 45px;
+    height: 45px;
+    object-position : center;
+    position: absolute;
+    transform : translate(15%, -120%);
+}
+
+.PlayerText{
+    align-content : center;
+    border: 1px solid grey;
+    border-radius: 50px;
+    width: 200px;
+    height: 200px;
+    text-align:center;
+    vertical-align: center;
+    margin-top: 25px;
+    font-size:40;
+}

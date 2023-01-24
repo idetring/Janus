@@ -13,22 +13,46 @@ class Board extends Component {
         }
     }
 
+    rotateTile(directions, rotation) {
+        let rotated = [];
+        for (let i = 0; i < directions.length; i++) {
+            let x = directions[i][0];
+            let y = directions[i][1];
+            let x2 = Math.round(x*Math.cos(rotation) - y*Math.sin(rotation));
+            let y2 = Math.round(x*Math.sin(rotation) + y*Math.cos(rotation));
+            rotated.push([x2,y2]);
+        }
+        return rotated;
+    }
+
     makeNewBoard(N){
+        let directions = [[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]], // rose
+                            [[-1,0],[1,0]], // horizontal
+                            [[0,-1],[0,1]], // vertical
+                            [[-1,-1],[-1,1],[1,-1],[1,1]], // cross
+                            [[-1,0],[0,-1],[0,1],[1,0]], // plus
+                            [[-1,0],[1,0],[0,1]], // horizontal
+                        ];
         let newGrid = new Array(N);
         for (let i = 0; i < N; i++) {
           newGrid[i] = new Array(N);
             for (let j = 0; j < N; j++) {
                 newGrid[i][j] = new singleTile([i,j],randomElementFromArray(['red','green','orange','purple']),randomElementFromArray([1,2,3,4,5]));
-                newGrid[i][j].directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+                newGrid[i][j].rotation = randomElementFromArray([0,90,180,270]);
+                newGrid[i][j].directions = randomElementFromArray(directions);
+                newGrid[i][j].directions = this.rotateTile(newGrid[i][j].directions,newGrid[i][j].rotation);
             }
         }
         let i = 0;
+        // create 8 Janus tiles... set janus to true, set rotation, set directions, set moves
         while (i < 8) {
             let k = randomIntFromInterval(0,9);
             let l = randomIntFromInterval(0,9);
             if (this.isItemInArray([[0,0],[N-1,N-1],[0,N-1],[N-1,0]],[k,l]) === -1 && newGrid[k][l].janus == false) {
                 newGrid[k][l].janus = true;
-                newGrid[k][l].directions = randomElementFromArray([[[-1,0],[1,0]],[[0,-1],[0,1]]])
+                newGrid[k][l].rotation = randomElementFromArray([0,90,180,270]);
+                newGrid[k][l].directions = [[-1,0],[1,0]]
+                newGrid[k][l].directions = this.rotateTile(newGrid[k][l].directions,newGrid[k][l].rotation);
                 newGrid[k][l].moves = randomElementFromArray([1,5])
                 i++;
             }
@@ -119,6 +143,7 @@ class Board extends Component {
             tmpplayer[playerID].turn = false;
             tmpplayer[(playerID + 1)%tmpplayer.length].turn = true;
         }
+        console.log('It is Player ' + (playerID + 1)%tmpplayer.length + '\'s turn')
         this.setState({grid:g,player:tmpplayer})
         // 
     } 
@@ -128,24 +153,24 @@ class Board extends Component {
         const s = this.state.scoreboard;
         console.log(this.state.scoreboard)
         const playerPositions = this.state.player.map(a => a.position)
-        const neighbours = g.map((row,i) => 
+        const neighbors = g.map((row,i) => 
             row.map((col,j) => {
-                let neighbours_ = [];
+                let neighbors_ = [];
                 for (let l = 0; l < g[i][j].directions.length; l++) {
-                    let newNeighbour = [i+g[i][j].directions[l][0]*g[i][j].moves,j+g[i][j].directions[l][1]*g[i][j].moves];
-                    if (newNeighbour[0] >= 0 && newNeighbour[0] < this.props.N && newNeighbour[1] >= 0 && newNeighbour[1] < this.props.N) {
-                        if (this.isItemInArray(playerPositions,newNeighbour) === -1) {
-                                neighbours_.push(newNeighbour);
+                    let newNeighbor = [i+g[i][j].directions[l][0]*g[i][j].moves,j+g[i][j].directions[l][1]*g[i][j].moves];
+                    if (newNeighbor[0] >= 0 && newNeighbor[0] < this.props.N && newNeighbor[1] >= 0 && newNeighbor[1] < this.props.N) {
+                        if (this.isItemInArray(playerPositions,newNeighbor) === -1) {
+                                neighbors_.push(newNeighbor);
                         }
                     }
                 }
-                return neighbours_;
+                return neighbors_;
             }));
         
         const playerID = this.state.player.map(a => a.turn).indexOf(true)
         const playerTurn = this.state.player[this.state.player.map(a => a.turn).indexOf(true)]
-        const playerNeighbours = neighbours[playerTurn.position[0]][playerTurn.position[1]]
-        console.log(playerNeighbours)
+        const playerNeighbors = neighbors[playerTurn.position[0]][playerTurn.position[1]]
+        console.log(playerNeighbors)
 
         const board = s.map((grow,gi) => {return (
             <tr>
@@ -153,9 +178,9 @@ class Board extends Component {
                     <td><table className="GroupTile"><tbody>
                     {gtile.tile.map((row,i) => { return (
                         <tr>
-                            {row.map((tile,j) => {
+                            {row.map((tile,j) => {                              
                                 const player_ = this.isItemInArray(playerPositions,[tile[0],tile[1]]) > -1 ? this.state.player[this.isItemInArray(playerPositions,[tile[0],tile[1]])] : null;
-                                const availableMove = this.isItemInArray(playerNeighbours,[tile[0],tile[1]]) > -1 ? () => this.onTileClick(playerID,[tile[0],tile[1]]) : null;
+                                const availableMove = this.isItemInArray(playerNeighbors,[tile[0],tile[1]]) > -1 ? () => this.onTileClick(playerID,[tile[0],tile[1]]) : null;
                                 return (
                                     <Tile
                                         content={player_ !== null ? <Player player={player_}

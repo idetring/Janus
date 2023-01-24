@@ -8,6 +8,7 @@ export class singleTile {
         this.moves = moves;
         this.janus = false;
         this.directions = [];
+        this.rotation = 0;
     }
 }
 
@@ -47,13 +48,15 @@ export class Tile extends Component{
         if (this.props.tile.color === 'grey') {
             class2return = "TileEmpty"
         }
-        return (
-        <td className={class2return} onClick={this.props.availableMove}
-            style={{
+        const style = {
             backgroundColor: this.props.tile.color !== 'grey' ? this.props.tile.color : null,
             boxSizing: 'border-box',
-            border: this.props.availableMove !== null ? "5px solid white" : ".5px solid black"
-            }}>{this.props.tile.color !== "grey" ? this.props.tile.moves : null}{this.props.content}
+            boxShadow: this.props.availableMove !== null ? "rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 1) 0px 18px 36px -18px inset" : "",
+            //transform : "rotate(" + this.props.tile.rotation + "deg)"
+        }
+        return (
+        <td className={class2return} onClick={this.props.availableMove}
+            style={style}>{this.props.tile.color !== "grey" ? this.props.tile.moves : null}{this.props.content}
         </td>
         )
     }

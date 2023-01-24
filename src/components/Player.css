@@ -14,10 +14,10 @@
     align-content : center;
     border: 1px solid grey;
     border-radius: 50px;
-    width: 200px;
-    height: 200px;
+    width: 150px;
+    height: 150px;
     text-align:center;
     vertical-align: center;
     margin-top: 25px;
-    font-size:40;
+    font-size:16;
 }

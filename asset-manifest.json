@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/Janus/static/css/main.dec5ec8b.css",
+    "main.js": "/Janus/static/js/main.822627ba.js",
+    "static/js/787.88f698e3.chunk.js": "/Janus/static/js/787.88f698e3.chunk.js",
+    "static/media/janus.png": "/Janus/static/media/janus.9b93106724b69a39bc55.png",
+    "index.html": "/Janus/index.html",
+    "main.dec5ec8b.css.map": "/Janus/static/css/main.dec5ec8b.css.map",
+    "main.822627ba.js.map": "/Janus/static/js/main.822627ba.js.map",
+    "787.88f698e3.chunk.js.map": "/Janus/static/js/787.88f698e3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.dec5ec8b.css",
+    "static/js/main.822627ba.js"
+  ]
+}
